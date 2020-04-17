@@ -1,4 +1,4 @@
-use crate::{types::Vector, Collisions, ContactEvent, ContactEventChannel, LastTransform};
+use crate::{types::Vector, Collisions, ContactEvent, ContactEventChannel};
 use amethyst::{
     core::Transform,
     ecs::{Entities, Join, ReadStorage, System, Write},
@@ -33,14 +33,13 @@ where
         ReadStorage<'s, Collisions<T>>,
         ReadStorage<'s, Transform>,
         Write<'s, ContactEventChannel<T>>,
-        ReadStorage<'s, LastTransform>,
     );
 
-    fn run(&mut self, (entities, collisions, transforms, mut channel, lasts): Self::SystemData) {
-        for (entity1, t1, c1, _last1) in (&*entities, &transforms, &collisions, &lasts).join() {
-            for (entity2, t2, c2, _last2) in (&*entities, &transforms, &collisions, &lasts)
+    fn run(&mut self, (entities, collisions, transforms, mut channel): Self::SystemData) {
+        for (entity1, t1, c1) in (&*entities, &transforms, &collisions).join() {
+            for (entity2, t2, c2) in (&*entities, &transforms, &collisions)
                 .join()
-                .filter(|(e, _, _, _)| *e > entity1)
+                .filter(|(e, _, _)| *e > entity1)
             {
                 for c1 in &c1.collisions {
                     for c2 in &c2.collisions {
