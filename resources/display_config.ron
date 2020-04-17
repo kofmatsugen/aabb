@@ -1,0 +1,4 @@
+(
+  title: "amethyst_sandbox",
+  dimensions: Some((1600, 900)),
+)
