@@ -53,7 +53,6 @@ where
             &["intersect_aabb"],
         );
 
-        #[cfg(feature = "debug")]
         builder.add(
             CashTransformSystem::new(),
             "cash_transform",

@@ -13,5 +13,5 @@ ncollide2d="0.21.0"
 log="0.4.8"
 
 [features]
-default=["debug"]
+default=[]
 debug=[]
