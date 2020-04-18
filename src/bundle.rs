@@ -1,6 +1,9 @@
 #[cfg(feature = "debug")]
 use crate::debug::system::{CollisionViewSystem, ReflectSystem, VelocitySystem};
-use crate::system::{CashTransformSystem, IntersectSystem};
+use crate::{
+    system::{CashTransformSystem, IntersectSystem},
+    traits::CollisionObject,
+};
 use amethyst::{
     core::SystemBundle,
     ecs::{DispatcherBuilder, World},
@@ -27,7 +30,7 @@ where
 
 impl<'a, 'b, T> SystemBundle<'a, 'b> for AabbCollisionBundle<T>
 where
-    T: 'static + Send + Sync + Copy,
+    T: 'static + Send + Sync + Copy + for<'c> CollisionObject<'c>,
 {
     fn build(
         self,

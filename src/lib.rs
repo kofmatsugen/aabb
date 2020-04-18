@@ -4,6 +4,7 @@ mod components;
 pub(crate) mod debug;
 mod event;
 pub(crate) mod system;
+pub mod traits;
 pub mod types;
 
 pub use components::{collision::Collisions, last_transform::LastTransform};
