@@ -1,11 +1,12 @@
 pub mod bundle;
 mod components;
 #[cfg(feature = "debug")]
-pub(crate) mod debug;
-mod event;
+pub mod debug;
+pub mod event;
 pub(crate) mod system;
 pub mod traits;
 pub mod types;
 
-pub use components::{collision::Collisions, last_transform::LastTransform};
-pub use event::contact::{ContactEvent, ContactEventChannel};
+#[cfg(feature = "debug")]
+pub(crate) use components::collision::Collision;
+pub use components::collision::Collisions;

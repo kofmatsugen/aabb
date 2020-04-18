@@ -1,1 +1,3 @@
-pub mod contact;
+mod contact;
+
+pub use contact::{ContactEvent, ContactEventChannel};

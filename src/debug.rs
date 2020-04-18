@@ -1,3 +1,3 @@
 pub(crate) mod components;
-pub(crate) mod state;
 pub(crate) mod system;
+pub mod traits;

@@ -1,6 +1,8 @@
 use crate::{
+    debug::traits::CollisionColor,
+    event::{ContactEvent, ContactEventChannel},
     types::{Aabb, Vector},
-    Collision, Collisions, ContactEvent, ContactEventChannel,
+    Collision, Collisions,
 };
 use amethyst::{
     core::{
@@ -42,7 +44,7 @@ where
 
 impl<'s, T> System<'s> for CollisionViewSystem<T>
 where
-    T: 'static + Send + Sync,
+    T: 'static + Send + Sync + CollisionColor,
 {
     type SystemData = (
         WriteStorage<'s, DebugLinesComponent>,
@@ -75,9 +77,14 @@ where
             let debug = entry.or_insert(DebugLinesComponent::with_capacity(2048));
             debug.clear();
             for (t, c) in (&transforms, &collisions).join() {
-                let color = Srgba::new(0.0, 0., 0., 1.);
-                for Collision { aabb, position, .. } in &c.collisions {
-                    draw_aabb(debug, aabb, position, t, position_z, color);
+                for Collision {
+                    aabb,
+                    position,
+                    paramater,
+                } in &c.collisions
+                {
+                    let (r, g, b, a) = paramater.collision_color();
+                    draw_aabb(debug, aabb, position, t, position_z, Srgba::new(r, g, b, a));
                 }
             }
         }

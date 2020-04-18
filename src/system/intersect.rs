@@ -1,5 +1,8 @@
 use crate::{
-    traits::CollisionObject, types::Vector, Collisions, ContactEvent, ContactEventChannel,
+    event::{ContactEvent, ContactEventChannel},
+    traits::CollisionObject,
+    types::Vector,
+    Collisions,
 };
 use amethyst::{
     core::Transform,
@@ -53,9 +56,9 @@ where
             for (c1, c2) in iproduct!(collision1, collision2).filter(|(c1, c2)| {
                 T::pair_filter(
                     entity1,
-                    c1.paramater.as_ref(),
+                    &c1.paramater,
                     entity2,
-                    c2.paramater.as_ref(),
+                    &c2.paramater,
                     &paramater_data,
                 )
             }) {
