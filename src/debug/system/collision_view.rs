@@ -76,7 +76,7 @@ where
         if let Ok(entry) = debug_lines.entry(self.debug_collisions) {
             let debug = entry.or_insert(DebugLinesComponent::with_capacity(2048));
             debug.clear();
-            for (t, c) in (&transforms, &collisions).join() {
+            for (c,) in (&collisions,).join() {
                 for Collision {
                     aabb,
                     position,
@@ -84,7 +84,7 @@ where
                 } in &c.collisions
                 {
                     let (r, g, b, a) = paramater.collision_color();
-                    draw_aabb(debug, aabb, position, t, position_z, Srgba::new(r, g, b, a));
+                    draw_aabb(debug, aabb, position, position_z, Srgba::new(r, g, b, a));
                 }
             }
         }
@@ -119,13 +119,10 @@ where
                         Point3::new(position.x - delta.x, position.y - delta.y, position_z);
                     debug.add_line(position, normal_3d, color);
 
-                    match (collisions.get(*entity1), transforms.get(*entity1)) {
-                        (Some(collisions), Some(t)) => {
-                            let mut t = t.clone();
-                            t.translation_mut().x -= delta.x / 2.;
-                            t.translation_mut().y -= delta.y / 2.;
+                    match collisions.get(*entity1) {
+                        Some(collisions) => {
                             for Collision { aabb, position, .. } in &collisions.collisions {
-                                draw_aabb(debug, aabb, position, &t, position_z, color);
+                                draw_aabb(debug, aabb, position, position_z, color);
                             }
                         }
                         _ => {}
@@ -141,13 +138,10 @@ where
                         Point3::new(position.x + delta.x, position.y + delta.y, position_z);
                     debug.add_line(position, normal_3d, color);
 
-                    match (collisions.get(*entity2), transforms.get(*entity2)) {
-                        (Some(collisions), Some(t)) => {
-                            let mut t = t.clone();
-                            t.translation_mut().x += delta.x / 2.;
-                            t.translation_mut().y += delta.y / 2.;
+                    match collisions.get(*entity2) {
+                        Some(collisions) => {
                             for Collision { aabb, position, .. } in &collisions.collisions {
-                                draw_aabb(debug, aabb, position, &t, position_z, color);
+                                draw_aabb(debug, aabb, position, position_z, color);
                             }
                         }
                         _ => {}
@@ -162,11 +156,9 @@ fn draw_aabb(
     debug: &mut DebugLinesComponent,
     aabb: &Aabb,
     position: &Vector,
-    t: &Transform,
     position_z: f32,
     color: Srgba,
 ) {
-    let position = Vector::new(t.translation().x, t.translation().y) + position;
     let left_top = Point2::new(
         position.x - aabb.half_extents().x,
         position.y + aabb.half_extents().y,
@@ -174,6 +166,17 @@ fn draw_aabb(
     let right_down = Point2::new(
         position.x + aabb.half_extents().x,
         position.y - aabb.half_extents().y,
+    );
+
+    debug.add_line(
+        Point3::new(position.x, position.y - 5., position_z),
+        Point3::new(position.x, position.y + 5., position_z),
+        color,
+    );
+    debug.add_line(
+        Point3::new(position.x - 5., position.y, position_z),
+        Point3::new(position.x + 5., position.y, position_z),
+        color,
     );
 
     debug.add_rectangle_2d(left_top, right_down, position_z, color);
