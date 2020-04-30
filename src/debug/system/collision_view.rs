@@ -89,6 +89,7 @@ where
             }
         }
 
+        /*
         // 衝突判定検出点
         let reader = self.reader.as_mut().unwrap();
         if let Ok(entry) = debug_lines.entry(self.contact_collisions) {
@@ -149,6 +150,7 @@ where
                 }
             }
         }
+            */
     }
 }
 
