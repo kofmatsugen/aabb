@@ -15,7 +15,6 @@ use amethyst::{
     },
     renderer::{debug_drawing::DebugLinesComponent, palette::rgb::Srgba, ActiveCamera},
 };
-use ncollide2d::query::Contact;
 use std::marker::PhantomData;
 
 pub(crate) struct CollisionViewSystem<T>
@@ -23,7 +22,7 @@ where
     T: 'static + Send + Sync,
 {
     debug_collisions: Entity,
-    contact_collisions: Entity,
+    _contact_collisions: Entity,
     reader: Option<ReaderId<ContactEvent<T>>>,
     paramater: PhantomData<T>,
 }
@@ -35,7 +34,7 @@ where
     pub(crate) fn new(world: &mut World) -> Self {
         CollisionViewSystem {
             debug_collisions: world.create_entity().build(),
-            contact_collisions: world.create_entity().build(),
+            _contact_collisions: world.create_entity().build(),
             reader: None,
             paramater: PhantomData,
         }
