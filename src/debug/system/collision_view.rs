@@ -99,53 +99,53 @@ where
                     Contact {
                         world1,
                         world2,
-                        // normal,
-                        // depth,
+                        normal,
+                        depth,
                         ..
                     },
-                // entity1,
-                // entity2,
+                entity1,
+                entity2,
                 ..
             } in channel.read(reader)
             {
-                // let delta = normal.into_inner() * *depth;
-                let radius = 2.;
+                let delta = normal.into_inner() * *depth;
+                let radius = 30.;
                 // entity1
                 {
                     let position = Point3::new(world1.x, world1.y, position_z);
-                    debug.add_circle_2d(position, radius, 4, color);
+                    debug.add_circle_2d(position, radius, 100, color);
 
-                    // let normal_3d =
-                    //     Point3::new(position.x - delta.x, position.y - delta.y, position_z);
-                    // debug.add_line(position, normal_3d, color);
+                    let normal_3d =
+                        Point3::new(position.x - delta.x, position.y - delta.y, position_z);
+                    debug.add_line(position, normal_3d, color);
 
-                    // match collisions.get(*entity1) {
-                    //     Some(collisions) => {
-                    //         for Collision { aabb, position, .. } in &collisions.collisions {
-                    //             draw_aabb(debug, aabb, position, position_z, color);
-                    //         }
-                    //     }
-                    //     _ => {}
-                    // }
+                    match collisions.get(*entity1) {
+                        Some(collisions) => {
+                            for Collision { aabb, position, .. } in &collisions.collisions {
+                                draw_aabb(debug, aabb, position, position_z, color);
+                            }
+                        }
+                        _ => {}
+                    }
                 }
 
                 // entity2
                 {
                     let position = Point3::new(world2.x, world2.y, position_z);
-                    debug.add_circle_2d(position, radius, 4, color);
+                    debug.add_circle_2d(position, radius, 100, color);
 
-                    // let normal_3d =
-                    //     Point3::new(position.x + delta.x, position.y + delta.y, position_z);
-                    // debug.add_line(position, normal_3d, color);
+                    let normal_3d =
+                        Point3::new(position.x + delta.x, position.y + delta.y, position_z);
+                    debug.add_line(position, normal_3d, color);
 
-                    // match collisions.get(*entity2) {
-                    //     Some(collisions) => {
-                    //         for Collision { aabb, position, .. } in &collisions.collisions {
-                    //             draw_aabb(debug, aabb, position, position_z, color);
-                    //         }
-                    //     }
-                    //     _ => {}
-                    // }
+                    match collisions.get(*entity2) {
+                        Some(collisions) => {
+                            for Collision { aabb, position, .. } in &collisions.collisions {
+                                draw_aabb(debug, aabb, position, position_z, color);
+                            }
+                        }
+                        _ => {}
+                    }
                 }
             }
         }
