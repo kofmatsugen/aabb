@@ -10,3 +10,5 @@ pub mod types;
 #[cfg(feature = "debug")]
 pub(crate) use components::collision::Collision;
 pub use components::collision::Collisions;
+
+pub use ncollide2d as collide;

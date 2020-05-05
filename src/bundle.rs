@@ -27,7 +27,7 @@ where
 #[cfg(not(feature = "debug"))]
 impl<'a, 'b, T> SystemBundle<'a, 'b> for AabbCollisionBundle<T>
 where
-    T: 'static + Send + Sync + Copy + for<'c> CollisionObject<'c>,
+    T: CollisionObject,
 {
     fn build(
         self,
@@ -42,7 +42,7 @@ where
 #[cfg(feature = "debug")]
 impl<'a, 'b, T> SystemBundle<'a, 'b> for AabbCollisionBundle<T>
 where
-    T: 'static + Send + Sync + Copy + for<'c> CollisionObject<'c> + CollisionColor,
+    T: CollisionObject + CollisionColor,
 {
     fn build(
         self,
