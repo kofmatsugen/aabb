@@ -7,7 +7,6 @@ pub(crate) mod system;
 pub mod traits;
 pub mod types;
 
-#[cfg(feature = "debug")]
 pub(crate) use components::collision::Collision;
 pub use components::collision::Collisions;
 

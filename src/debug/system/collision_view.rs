@@ -1,12 +1,12 @@
 use crate::{
     debug::traits::CollisionColor,
     event::{ContactEvent, ContactEventChannel},
-    types::{Aabb, Contact, Vector},
+    types::{Aabb, Vector},
     Collision, Collisions,
 };
 use amethyst::{
     core::{
-        math::{Point2, Point3},
+        math::{Point2, Point3, Vector3},
         Transform,
     },
     ecs::{
@@ -80,7 +80,8 @@ where
                     aabb,
                     position,
                     paramater,
-                } in &c.collisions
+                    ..
+                } in c.collisions.values()
                 {
                     let (r, g, b, a) = paramater.collision_color();
                     draw_aabb(debug, aabb, position, position_z, Srgba::new(r, g, b, a));
@@ -94,59 +95,14 @@ where
             let debug = entry.or_insert(DebugLinesComponent::with_capacity(2048));
             debug.clear();
             let color = Srgba::new(0., 1., 1., 1.);
-            for ContactEvent {
-                contact:
-                    Contact {
-                        world1,
-                        world2,
-                        normal,
-                        depth,
-                        ..
-                    },
-                entity1,
-                entity2,
-                ..
-            } in channel.read(reader)
-            {
-                let delta = normal.into_inner() * *depth;
+            for ContactEvent { point, delta, .. } in channel.read(reader) {
                 let radius = 30.;
                 // entity1
-                {
-                    let position = Point3::new(world1.x, world1.y, position_z);
-                    debug.add_circle_2d(position, radius, 100, color);
+                let position = Point3::new(point.x, point.y, position_z);
+                debug.add_circle_2d(position, radius, 100, color);
 
-                    let normal_3d =
-                        Point3::new(position.x - delta.x, position.y - delta.y, position_z);
-                    debug.add_line(position, normal_3d, color);
-
-                    match collisions.get(*entity1) {
-                        Some(collisions) => {
-                            for Collision { aabb, position, .. } in &collisions.collisions {
-                                draw_aabb(debug, aabb, position, position_z, color);
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-
-                // entity2
-                {
-                    let position = Point3::new(world2.x, world2.y, position_z);
-                    debug.add_circle_2d(position, radius, 100, color);
-
-                    let normal_3d =
-                        Point3::new(position.x + delta.x, position.y + delta.y, position_z);
-                    debug.add_line(position, normal_3d, color);
-
-                    match collisions.get(*entity2) {
-                        Some(collisions) => {
-                            for Collision { aabb, position, .. } in &collisions.collisions {
-                                draw_aabb(debug, aabb, position, position_z, color);
-                            }
-                        }
-                        _ => {}
-                    }
-                }
+                let delta = Vector3::new(delta.x, delta.y, position_z);
+                debug.add_direction(position, delta, color);
             }
         }
     }

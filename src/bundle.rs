@@ -31,7 +31,7 @@ where
 {
     fn build(
         self,
-        _world: &mut World,
+        world: &mut World,
         builder: &mut DispatcherBuilder,
     ) -> Result<(), amethyst::Error> {
         builder.add(IntersectSystem::<T>::new(), "intersect_aabb", &[]);
@@ -46,13 +46,13 @@ where
 {
     fn build(
         self,
-        _world: &mut World,
+        world: &mut World,
         builder: &mut DispatcherBuilder,
     ) -> Result<(), amethyst::Error> {
         builder.add(IntersectSystem::<T>::new(), "intersect_aabb", &[]);
 
         builder.add(
-            CollisionViewSystem::<T>::new(_world),
+            CollisionViewSystem::<T>::new(world),
             "collision_view",
             &["intersect_aabb"],
         );

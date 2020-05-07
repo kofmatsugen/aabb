@@ -1,44 +1,21 @@
 use crate::{
     event::{ContactEvent, ContactEventChannel},
     traits::CollisionObject,
+    types::{Aabb, Vector},
     Collisions,
 };
-use amethyst::{
-    core::{math::Unit, Time},
-    ecs::{Entities, Entity, Join, Read, ReadStorage, System, Write},
-};
-use ncollide2d::{
-    query::{Contact, TrackedContact},
-    shape::ShapeHandle,
-    {
-        math::{Isometry, Point, Vector},
-        pipeline::{
-            object::{CollisionGroups, GeometricQueryType},
-            world::CollisionWorld,
-        },
-    },
-};
+use amethyst::ecs::{Entities, Join, System, Write, WriteStorage};
+use itertools::iproduct;
 use std::marker::PhantomData;
 
-pub(crate) struct IntersectSystem<T>
-where
-    T: CollisionObject,
-{
+pub(crate) struct IntersectSystem<T> {
     paramater: PhantomData<T>,
-    world: CollisionWorld<f32, (Entity, T)>,
 }
 
-impl<T> IntersectSystem<T>
-where
-    T: CollisionObject,
-{
+impl<T> IntersectSystem<T> {
     pub(crate) fn new() -> Self {
-        let mut world = CollisionWorld::new(0.);
-        // フィルタを設定
-        world.set_broad_phase_pair_filter(Some(T::PairFilter::default()));
         IntersectSystem {
             paramater: PhantomData,
-            world,
         }
     }
 }
@@ -49,96 +26,68 @@ where
 {
     type SystemData = (
         Entities<'s>,
-        ReadStorage<'s, Collisions<T>>,
+        WriteStorage<'s, Collisions<T>>,
         Write<'s, ContactEventChannel<T>>,
-        Read<'s, Time>,
     );
 
-    fn run(&mut self, (entities, collisions, mut channel, time): Self::SystemData) {
-        // 登録されている判定をすべて登録
-        // 判定はこのフレーム上のものだけで行うので，後で削除する
-        let mut registered_handles = vec![];
-
-        for (e, collision) in (&*entities, &collisions).join() {
-            for c in &collision.collisions {
-                let position = Isometry::new(c.position, 0.);
-                let shape = ShapeHandle::new(c.aabb.clone());
-                let group = CollisionGroups::new();
-                let query_type = GeometricQueryType::Contacts(0., 0.);
-                let data = (e, c.paramater.clone());
-
-                let (handle, _object) = self.world.add(position, shape, group, query_type, data);
-                registered_handles.push(handle);
-            }
+    fn run(&mut self, (entities, mut collisions, mut channel): Self::SystemData) {
+        for (c,) in (&mut collisions,).join() {
+            // 更新されてないものを削除しておく
+            c.remove_non_dirty();
         }
 
-        self.world.update();
-
-        // ここで処理した判定をすべて取得する
-        for (h1, h2, _, manifold) in self.world.contact_pairs(false) {
-            let count = manifold.len();
-            if count == 0 {
-                continue;
-            }
-            match (
-                self.world.collision_object(h1),
-                self.world.collision_object(h2),
-            ) {
-                (Some(o1), Some(o2)) => {
-                    let (entity1, args1) = o1.data();
-                    let (entity2, args2) = o2.data();
-
-                    let mut world1_sum = Point::<f32>::new(0., 0.);
-                    let mut world2_sum = Point::<f32>::new(0., 0.);
-                    let mut depth_sum = 0.;
-                    let mut normal_sum = Vector::new(0., 0.);
-
-                    for TrackedContact {
-                        contact:
-                            Contact {
-                                world1,
-                                world2,
-                                depth,
-                                normal,
-                            },
-                        ..
-                    } in manifold.contacts()
-                    {
-                        world1_sum = Point::new(world1_sum.x + world1.x, world1_sum.y + world1.y);
-                        world2_sum = Point::new(world2_sum.x + world2.x, world2_sum.y + world2.y);
-                        depth_sum += depth;
-                        normal_sum += normal.into_inner();
+        let joined1 = (&*entities, &collisions).join();
+        let joined2 = (&*entities, &collisions).join();
+        for ((e1, c1), (e2, c2)) in iproduct!(joined1, joined2).filter(|((e1, _), (e2, _))| e1 < e2)
+        {
+            for (_, c1) in &c1.collisions {
+                for (_, c2) in &c2.collisions {
+                    if T::pair_filter(&c1.paramater, &c2.paramater) == false {
+                        continue;
                     }
-
-                    let count = count as f32;
-                    let normal = Unit::new_normalize(normal_sum);
-
-                    log::error!(
-                        "[{} F] intersect: normal = ({:.2}, {:.2})",
-                        time.frame_number(),
-                        normal.x,
-                        normal.y,
-                    );
-
-                    let contact = Contact {
-                        world1: Point::new(world1_sum.x / count, world1_sum.y / count),
-                        world2: Point::new(world2_sum.x / count, world2_sum.y / count),
-                        depth: depth_sum / count,
-                        normal,
-                    };
-                    channel.single_write(ContactEvent {
-                        entity1: *entity1,
-                        entity2: *entity2,
-                        args1: args1.clone(),
-                        args2: args2.clone(),
-                        contact: contact,
-                    });
+                    if let Some(hit) =
+                        intersect_aabb(&c1.aabb, &c1.position, &c2.aabb, &c2.position)
+                    {
+                        channel.single_write(ContactEvent {
+                            entity1: e1,
+                            entity2: e2,
+                            args1: c1.paramater.clone(),
+                            args2: c2.paramater.clone(),
+                            point: hit.point,
+                            delta: hit.delta,
+                            hit_center: (c1.position + c2.position) / 2.,
+                        });
+                    }
                 }
-                _ => {}
             }
         }
+    }
+}
 
-        // 次のフレームに持ち越さないためにすべて削除
-        self.world.remove(&registered_handles[..]);
+struct Hit {
+    point: Vector,
+    delta: Vector,
+}
+
+fn intersect_aabb(aabb1: &Aabb, pos1: &Vector, aabb2: &Aabb, pos2: &Vector) -> Option<Hit> {
+    let pivot_distance = pos2 - pos1;
+    let diff_half = aabb1.half_extents() + aabb2.half_extents() - pivot_distance.abs();
+
+    if diff_half.x <= 0. || diff_half.y <= 0. {
+        return None;
+    }
+
+    if diff_half.x < diff_half.y {
+        let sign_x = pivot_distance.x.signum();
+        let delta = Vector::new(diff_half.x * sign_x, 0.);
+        let point = Vector::new(pos1.x + aabb1.half_extents().x * sign_x, pos2.y);
+
+        Some(Hit { delta, point })
+    } else {
+        let sign_y = pivot_distance.y.signum();
+        let delta = Vector::new(0., diff_half.y * sign_y);
+        let point = Vector::new(pos2.x, pos1.y + aabb1.half_extents().y * sign_y);
+
+        Some(Hit { delta, point })
     }
 }
