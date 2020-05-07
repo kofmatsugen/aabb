@@ -81,7 +81,7 @@ where
                     position,
                     paramater,
                     ..
-                } in c.collisions.values()
+                } in c.collisions.iter()
                 {
                     let (r, g, b, a) = paramater.collision_color();
                     draw_aabb(debug, aabb, position, position_z, Srgba::new(r, g, b, a));
@@ -95,10 +95,13 @@ where
             let debug = entry.or_insert(DebugLinesComponent::with_capacity(2048));
             debug.clear();
             let color = Srgba::new(0., 1., 1., 1.);
-            for ContactEvent { point, delta, .. } in channel.read(reader) {
+            for ContactEvent {
+                hit_center, delta, ..
+            } in channel.read(reader)
+            {
                 let radius = 30.;
                 // entity1
-                let position = Point3::new(point.x, point.y, position_z);
+                let position = Point3::new(hit_center.x, hit_center.y, position_z);
                 debug.add_circle_2d(position, radius, 100, color);
 
                 let delta = Vector3::new(delta.x, delta.y, position_z);

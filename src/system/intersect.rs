@@ -4,7 +4,7 @@ use crate::{
     types::{Aabb, Vector},
     Collisions,
 };
-use amethyst::ecs::{Entities, Join, System, Write, WriteStorage};
+use amethyst::ecs::{Entities, Join, ReadStorage, System, Write};
 use itertools::iproduct;
 use std::marker::PhantomData;
 
@@ -26,22 +26,17 @@ where
 {
     type SystemData = (
         Entities<'s>,
-        WriteStorage<'s, Collisions<T>>,
+        ReadStorage<'s, Collisions<T>>,
         Write<'s, ContactEventChannel<T>>,
     );
 
-    fn run(&mut self, (entities, mut collisions, mut channel): Self::SystemData) {
-        for (c,) in (&mut collisions,).join() {
-            // 更新されてないものを削除しておく
-            c.remove_non_dirty();
-        }
-
+    fn run(&mut self, (entities, collisions, mut channel): Self::SystemData) {
         let joined1 = (&*entities, &collisions).join();
         let joined2 = (&*entities, &collisions).join();
         for ((e1, c1), (e2, c2)) in iproduct!(joined1, joined2).filter(|((e1, _), (e2, _))| e1 < e2)
         {
-            for (_, c1) in &c1.collisions {
-                for (_, c2) in &c2.collisions {
+            for c1 in &c1.collisions {
+                for c2 in &c2.collisions {
                     if T::pair_filter(&c1.paramater, &c2.paramater) == false {
                         continue;
                     }
