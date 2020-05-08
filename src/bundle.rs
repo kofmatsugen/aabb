@@ -31,7 +31,7 @@ where
 {
     fn build(
         self,
-        world: &mut World,
+        _world: &mut World,
         builder: &mut DispatcherBuilder,
     ) -> Result<(), amethyst::Error> {
         builder.add(IntersectSystem::<T>::new(), "intersect_aabb", &[]);
